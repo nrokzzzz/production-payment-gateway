@@ -1,1 +1,0 @@
-# production-payment-gateway

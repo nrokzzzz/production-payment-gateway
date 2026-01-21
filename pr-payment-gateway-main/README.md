@@ -1,51 +1,56 @@
-# Payment Gateway – Production-Ready Fintech System
+Payment Gateway – Enterprise-Grade Fintech Platform
+Introduction
 
-## Overview
+This project showcases a fully functional, production-style payment gateway modeled after modern platforms like Razorpay and Stripe. It enables merchants to onboard, create orders, accept UPI and card payments, host secure checkout flows, process transactions asynchronously, deliver signed webhooks with retries, issue refunds, enforce idempotency, and embed payments using a lightweight JavaScript SDK.
 
-This project implements a **production-ready payment gateway** inspired by Razorpay and Stripe. It supports merchant onboarding, order management, UPI and card payments, hosted checkout, asynchronous job processing, webhooks with retries, refunds, idempotency, and an embeddable JavaScript SDK.
+The goal is to simulate real-world fintech system design—including secure API authentication, transaction state machines, background job workers, webhook delivery with cryptographic signatures, retry strategies with exponential backoff, and cross-origin embeddable widgets.
 
-It is built to demonstrate **real-world fintech architecture patterns**: API authentication, state machines for transaction lifecycles, background workers, webhook delivery with HMAC signatures, idempotency keys, retry logic with exponential backoff, and cross-origin embeddable widgets.
+Goals
+Phase 1 – Core Gateway
 
----
+Merchant authentication using API key & secret
 
-## Objectives
+Order creation and retrieval
 
-### Deliverable 1 – Core Gateway
+Payment initiation (UPI & Card)
 
-* Merchant authentication via API key and secret
-* Order creation and retrieval
-* Payment processing (UPI and Cards)
-* Hosted checkout page
-* Database persistence
-* Health check endpoint
+Hosted checkout interface
 
-### Deliverable 2 – Production Features
+Persistent storage with a relational database
 
-* Asynchronous payment processing (Redis + workers)
-* Webhooks with HMAC signature verification and retries
-* Refunds (full and partial)
-* Idempotency keys
-* Embeddable JavaScript SDK
-* Enhanced merchant dashboard
+System health endpoint
 
----
+Phase 2 – Production Capabilities
 
-## Architecture
+Asynchronous processing using Redis + workers
 
-**Services (Dockerized):**
+Webhooks with HMAC verification and retry logic
 
-* PostgreSQL (Database)
-* Redis (Job Queue)
-* API (Backend)
-* Worker (Async Jobs)
-* Dashboard (Merchant UI)
-* Checkout (Hosted Payment Page)
+Full and partial refunds
 
----
+Idempotent request handling
 
-## Project Structure
+Embeddable JavaScript payment SDK
 
-```
+Feature-rich merchant dashboard
+
+System Design
+
+Dockerized Components
+
+PostgreSQL – Data persistence
+
+Redis – Job queue
+
+API Service – Core backend
+
+Worker Service – Background processing
+
+Dashboard – Merchant portal
+
+Checkout – Hosted payment UI
+
+Directory Layout
 payment-gateway/
 ├── docker-compose.yml
 ├── README.md
@@ -75,141 +80,144 @@ payment-gateway/
     │   └── iframe-content/
     ├── webpack.config.js
     └── dist/checkout.js
-```
 
----
-
-## Docker Setup
-
-### Start All Services
-
-```bash
+Running the Stack
+Launch Everything
 docker-compose up -d
-```
 
-### Services & Ports
+Active Services
+Component	Container Name	Port
+Database	pg_gateway	5432
+Redis	redis_gateway	6379
+API	gateway_api	8000
+Worker	gateway_worker	—
+Dashboard	gateway_dashboard	3000
+Checkout	gateway_checkout	3001
+Environment Setup
 
-| Service    | Container Name    | Port |
-| ---------- | ----------------- | ---- |
-| PostgreSQL | pg_gateway        | 5432 |
-| Redis      | redis_gateway     | 6379 |
-| API        | gateway_api       | 8000 |
-| Worker     | gateway_worker    | —    |
-| Dashboard  | gateway_dashboard | 3000 |
-| Checkout   | gateway_checkout  | 3001 |
+Copy .env.example to .env and configure:
 
----
-
-## Environment Configuration
-
-Create `.env` from `.env.example`:
-
-```env
 DATABASE_URL=postgresql://gateway_user:gateway_pass@postgres:5432/payment_gateway
 PORT=8000
 
-# Test merchant credentials (pre-seeded)
+# Preloaded test merchant
 TEST_MERCHANT_EMAIL=test@example.com
 TEST_API_KEY=key_test_abc123
 TEST_API_SECRET=secret_test_xyz789
 
-# Payment simulation config
+# Simulation settings
 UPI_SUCCESS_RATE=0.90
 CARD_SUCCESS_RATE=0.95
 PROCESSING_DELAY_MIN=5000
 PROCESSING_DELAY_MAX=10000
 
-# Test mode for evaluation (required)
+# Deterministic testing
 TEST_MODE=false
 TEST_PAYMENT_SUCCESS=true
 TEST_PROCESSING_DELAY=1000
 
-# Webhook retry test mode
+# Webhook testing
 WEBHOOK_RETRY_INTERVALS_TEST=false
-```
 
----
+Data Model
+Merchants
 
-## Database Schema
+id (UUID, PK)
 
-### Merchants
+name, email (unique)
 
-* `id` (UUID, PK)
-* `name`, `email` (unique)
-* `api_key` (unique), `api_secret`
-* `webhook_url`, `webhook_secret`
-* `is_active`
-* `created_at`, `updated_at`
+api_key, api_secret
 
-### Orders
+webhook_url, webhook_secret
 
-* `id` (order_XXXXXXXXXXXXXX)
-* `merchant_id` (FK)
-* `amount`, `currency`
-* `receipt`, `notes`
-* `status`
-* `created_at`, `updated_at`
+is_active
 
-### Payments
+created_at, updated_at
 
-* `id` (pay_XXXXXXXXXXXXXX)
-* `order_id` (FK)
-* `merchant_id` (FK)
-* `amount`, `currency`
-* `method`, `status`
-* `vpa`
-* `card_network`, `card_last4`
-* `error_code`, `error_description`
-* `captured`
-* `created_at`, `updated_at`
+Orders
 
-### Refunds
+id (order_XXXXXXXXXXXXXX)
 
-* `id` (rfnd_XXXXXXXXXXXXXX)
-* `payment_id` (FK)
-* `merchant_id` (FK)
-* `amount`, `reason`
-* `status`
-* `created_at`, `processed_at`
+merchant_id (FK)
 
-### Webhook Logs
+amount, currency
 
-* `id` (UUID, PK)
-* `merchant_id` (FK)
-* `event`, `payload`
-* `status`, `attempts`
-* `last_attempt_at`, `next_retry_at`
-* `response_code`, `response_body`
-* `created_at`
+receipt, notes
 
-### Idempotency Keys
+status
 
-* `key`, `merchant_id`
-* `response`
-* `created_at`, `expires_at`
+created_at, updated_at
 
----
+Payments
 
-## Seeded Test Merchant
+id (pay_XXXXXXXXXXXXXX)
 
-| Field          | Value                                       |
-| -------------- | ------------------------------------------- |
-| id             | 550e8400-e29b-41d4-a716-446655440000        |
-| name           | Test Merchant                               |
-| email          | [test@example.com](mailto:test@example.com) |
-| api_key        | key_test_abc123                             |
-| api_secret     | secret_test_xyz789                          |
-| webhook_secret | whsec_test_abc123                           |
+order_id, merchant_id
 
----
+amount, currency
 
-## API Endpoints
+method, status
 
-### Health Check
+vpa
 
-`GET /health`
+card_network, card_last4
 
-```json
+error_code, error_description
+
+captured
+
+created_at, updated_at
+
+Refunds
+
+id (rfnd_XXXXXXXXXXXXXX)
+
+payment_id, merchant_id
+
+amount, reason
+
+status
+
+created_at, processed_at
+
+Webhook Records
+
+id (UUID)
+
+merchant_id
+
+event, payload
+
+status, attempts
+
+last_attempt_at, next_retry_at
+
+response_code, response_body
+
+created_at
+
+Idempotency Store
+
+key, merchant_id
+
+response
+
+created_at, expires_at
+
+Preloaded Merchant
+Field	Value
+id	550e8400-e29b-41d4-a716-446655440000
+name	Test Merchant
+email	test@example.com
+
+api_key	key_test_abc123
+api_secret	secret_test_xyz789
+webhook_secret	whsec_test_abc123
+API Reference
+Health
+
+GET /health
+
 {
   "status": "healthy",
   "database": "connected",
@@ -217,64 +225,51 @@ WEBHOOK_RETRY_INTERVALS_TEST=false
   "worker": "running",
   "timestamp": "2024-01-15T10:30:00Z"
 }
-```
 
----
+Create Order
 
-### Create Order
-
-`POST /api/v1/orders`
+POST /api/v1/orders
 
 Headers:
 
-```
 X-Api-Key: key_test_abc123
 X-Api-Secret: secret_test_xyz789
-```
+
 
 Body:
 
-```json
 {
   "amount": 50000,
   "currency": "INR",
   "receipt": "receipt_123"
 }
-```
 
----
+Fetch Order
 
-### Get Order
+GET /api/v1/orders/{order_id}
 
-`GET /api/v1/orders/{order_id}`
+Initiate Payment (Async)
 
----
-
-### Create Payment (Async)
-
-`POST /api/v1/payments`
+POST /api/v1/payments
 
 Headers:
 
-```
 X-Api-Key: key_test_abc123
 X-Api-Secret: secret_test_xyz789
 Idempotency-Key: unique_request_id
-```
+
 
 UPI:
 
-```json
 {
   "order_id": "order_xxx",
   "method": "upi",
   "vpa": "user@paytm"
 }
-```
+
 
 Card:
 
-```json
 {
   "order_id": "order_xxx",
   "method": "card",
@@ -286,107 +281,78 @@ Card:
     "holder_name": "John Doe"
   }
 }
-```
 
----
+Capture
 
-### Capture Payment
+POST /api/v1/payments/{payment_id}/capture
 
-`POST /api/v1/payments/{payment_id}/capture`
+Refund
 
----
+POST /api/v1/payments/{payment_id}/refunds
 
-### Refund Payment
+Fetch Refund
 
-`POST /api/v1/payments/{payment_id}/refunds`
+GET /api/v1/refunds/{refund_id}
 
----
+Webhook Logs
 
-### Get Refund
+GET /api/v1/webhooks
 
-`GET /api/v1/refunds/{refund_id}`
+Retry Webhook
 
----
+POST /api/v1/webhooks/{webhook_id}/retry
 
-### Webhook Logs
+Webhook System
+Events
 
-`GET /api/v1/webhooks`
+payment.created
 
----
+payment.pending
 
-### Retry Webhook
+payment.success
 
-`POST /api/v1/webhooks/{webhook_id}/retry`
+payment.failed
 
----
+refund.created
 
-### Test Endpoints
+refund.processed
 
-* `GET /api/v1/test/merchant`
-* `GET /api/v1/test/jobs/status`
-
----
-
-## Webhooks
-
-### Events
-
-* payment.created
-* payment.pending
-* payment.success
-* payment.failed
-* refund.created
-* refund.processed
-
-### Signature
-
-HMAC-SHA256 over JSON payload using `webhook_secret`.
+Each payload is signed using HMAC-SHA256 with the merchant’s webhook secret.
 
 Header:
 
-```
 X-Webhook-Signature: <hex_signature>
-```
 
----
+Background Jobs
 
-## Job Queue
+ProcessPaymentJob
 
-* **ProcessPaymentJob**
-* **DeliverWebhookJob**
-* **ProcessRefundJob**
+DeliverWebhookJob
 
-Supports deterministic test mode:
+ProcessRefundJob
 
-```env
+Deterministic testing:
+
 TEST_MODE=true
 TEST_PAYMENT_SUCCESS=true
 TEST_PROCESSING_DELAY=1000
 WEBHOOK_RETRY_INTERVALS_TEST=true
-```
 
----
-
-## Checkout Page
-
-URL:
-
-```
+Checkout Experience
 http://localhost:3001/checkout?order_id=order_xxx
-```
 
-Supports:
 
-* UPI & Card
-* Processing state
-* Polling payment status
-* Success / Failure views
+Features:
 
----
+UPI and Card flows
 
-## Embeddable SDK
+Live processing state
 
-```html
+Polling for status
+
+Success and failure screens
+
+JavaScript SDK
 <script src="http://localhost:3001/checkout.js"></script>
 <button id="pay-button">Pay Now</button>
 
@@ -394,47 +360,45 @@ Supports:
 const checkout = new PaymentGateway({
   key: 'key_test_abc123',
   orderId: 'order_xyz',
-  onSuccess: (response) => console.log(response),
-  onFailure: (error) => console.log(error)
+  onSuccess: (res) => console.log(res),
+  onFailure: (err) => console.log(err)
 });
 
 checkout.open();
 </script>
-```
 
----
+Merchant Dashboard
 
-## Dashboard
+Login: /login
 
-* Login: `/login`
-* Home: `/dashboard`
-* Transactions: `/dashboard/transactions`
-* Webhooks: `/dashboard/webhooks`
-* Docs: `/dashboard/docs`
+Overview: /dashboard
 
----
+Transactions: /dashboard/transactions
 
-## Testing Webhooks
+Webhooks: /dashboard/webhooks
 
-```bash
+Documentation: /dashboard/docs
+
+Webhook Testing
 node test-merchant/webhook-receiver.js
-```
 
-Webhook URL:
 
-```
+Use:
+
 http://host.docker.internal:4000/webhook
-```
 
----
+Typical Mistakes
 
-## Common Pitfalls
+Using invalid ID formats
 
-* Incorrect ID formats
-* Missing `/health`
-* No seeded merchant
-* Missing data-test-id attributes
-* Improper card validation
-* Not using env vars
-* API starting before DB
+Missing the /health endpoint
 
+Not seeding a test merchant
+
+Omitting data-test-id attributes
+
+Weak card validation
+
+Hardcoding secrets instead of env vars
+
+Starting API before database is ready
